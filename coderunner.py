@@ -43,18 +43,19 @@ class Runner:
         self.log = []
 
     def mkfiles(self):
-        for possible_folder in ('/tmp/codeeval/{}', '/Users/s010380/codeeval/{}', '/Users/nrubin29/codeeval/{}'):
+        for possible_folder in ('/var/codeeval/{}', '/Users/s010380/codeeval/{}', '/Users/nrubin29/codeeval/{}'):
             folder_path = possible_folder.format(self.folder_name)
 
             try:
                 os.mkdir(folder_path)
                 self.folder_path = folder_path
+                break
             except FileExistsError:
                 shutil.rmtree(folder_path)
                 os.mkdir(folder_path)
                 self.folder_path = folder_path
             except:
-                continue
+                pass
 
         if not self.folder_path:
             raise Exception('Could not find codeeval folder. Is this running on a new system?')
@@ -131,7 +132,10 @@ class JavaRunner(Runner):
 class PythonRunner(Runner):
     def setup(self):
         self.files.append(File('__init__.py', code=''))
-        super(PythonRunner, self).setup()
+        return super(PythonRunner, self).setup()
+
+    def _compile(self):
+        return self.proc('python -m py_compile ' + ' '.join([file.name for file in self.files]))
 
     def _run(self, inp=None):
         return self.proc('python ' + self.files[0].name, inp)
