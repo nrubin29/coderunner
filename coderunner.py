@@ -43,7 +43,7 @@ class Runner:
         self.log = []
 
     def mkfiles(self):
-        for possible_folder in ('/tmp/codeeval/{}', '/Users/s010380/codeeval/{}'):
+        for possible_folder in ('/tmp/codeeval/{}', '/Users/s010380/codeeval/{}', '/Users/nrubin29/codeeval/{}'):
             folder_path = possible_folder.format(self.folder_name)
 
             try:
