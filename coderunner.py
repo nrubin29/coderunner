@@ -77,18 +77,16 @@ class Runner:
         self.set_up = True
         return self.compile_exit_code is 0
 
-    def proc(self, cmd, inp=None):
+    def start_proc(self, cmd):
+        return subprocess.Popen(cmd.split(' '), cwd=self.folder_path, stdout=subprocess.PIPE,
+                                stdin=subprocess.PIPE, stderr=subprocess.STDOUT)
+
+    def run_proc(self, cmd, inp=None):
         try:
-            p = subprocess.Popen(cmd.split(' '), cwd=self.folder_path, stdout=subprocess.PIPE,
-                                 stdin=subprocess.PIPE, stderr=subprocess.STDOUT)
+            p = self.start_proc(cmd)
             return p.communicate(input=inp.encode() if inp else None, timeout=10)[0].decode().strip(), p.returncode
         except subprocess.TimeoutExpired:
-            return '', -1
-
-    def proc_async(self, cmd):
-        p = subprocess.Popen(cmd.split(' '), cwd=self.folder_path, stdout=subprocess.PIPE,
-                             stdin=subprocess.PIPE, stderr=subprocess.STDOUT)
-        return p
+            return None, -1
 
     def go(self, inp=None):
         if not self.set_up:
@@ -120,13 +118,13 @@ class Runner:
 
 class JavaRunner(Runner):
     def _compile(self):
-        return self.proc('javac ' + ' '.join([file.name for file in self.files]))
+        return self.run_proc('javac ' + ' '.join([file.name for file in self.files]))
 
     def _run(self, inp=None):
-        return self.proc('java ' + self.files[0].name[:-5], inp)  # The -5 is to get rid of the .java
+        return self.run_proc('java ' + self.files[0].name[:-5], inp)  # The -5 is to get rid of the .java
 
     def _run_async(self):
-        return self.proc_async('java ' + self.files[0].name[:-5])  # The -5 is to get rid of the .java
+        return self.start_proc('java ' + self.files[0].name[:-5])  # The -5 is to get rid of the .java
 
 
 class PythonRunner(Runner):
@@ -135,11 +133,22 @@ class PythonRunner(Runner):
         return super(PythonRunner, self).setup()
 
     def _compile(self):
-        return self.proc('python -m py_compile ' + ' '.join([file.name for file in self.files]))
+        return self.run_proc('python -m py_compile ' + ' '.join([file.name for file in self.files]))
 
     def _run(self, inp=None):
-        return self.proc('python ' + self.files[0].name, inp)
+        return self.run_proc('python ' + self.files[0].name, inp)
 
     def _run_async(self):
         # TODO: Change this to standard python
-        return self.proc_async('/Users/Shared/python3/bin/python3 ' + self.files[0].file_name)
+        return self.start_proc('/Users/Shared/python3/bin/python3 ' + self.files[0].file_name)
+
+
+class CppRunner(Runner):
+    def _compile(self):
+        return self.run_proc('g++ ' + ' '.join([file.name for file in self.files]))
+
+    def _run(self, inp=None):
+        return self.run_proc('./a.out', inp)
+
+    def _run_async(self):
+        return self.start_proc('./a.out')
